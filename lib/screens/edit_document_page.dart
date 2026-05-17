@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/appwrite_service.dart';
 import '../widgets/image_block.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class EditDocumentPage extends StatefulWidget {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
 
 class ImageBlock extends StatefulWidget {
   final String? imageUrl;
@@ -54,11 +53,8 @@ class _ImageBlockState extends State<ImageBlock> {
       alignment: _alignment,
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
-        return Center(
-          child: CircularProgressIndicator(
-            value: progress.cumulativeBytesLoaded /
-                progress.cumulativeBytesTotal,
-          ),
+        return const Center(
+          child: CircularProgressIndicator(),
         );
       },
       errorBuilder: (context, error, stackTrace) {
@@ -78,6 +74,7 @@ class _ImageBlockState extends State<ImageBlock> {
 
   void _showAddImageDialog() {
     final imageUrlController = TextEditingController();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -87,10 +84,10 @@ class _ImageBlockState extends State<ImageBlock> {
           decoration: InputDecoration(hintText: 'Enter image URL', isDense: true),
           autofocus: true,
           onChanged: (value) {
-            if (value.isNotEmpty && !widget.imageUrl!.startsWith('http')) {
-              _insertImage(value);
-            } else if (widget.imageUrl != null) {
+            if (widget.imageUrl != null) {
               _insertImage(widget.imageUrl!);
+            } else if (value.isNotEmpty && value.startsWith('http')) {
+              _insertImage(value);
             }
           },
         ),
@@ -143,7 +140,6 @@ class _ImageBlockState extends State<ImageBlock> {
   }
 
   Future<void> _showImageOptionsDialog() async {
-    final newUrlController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -152,14 +148,6 @@ class _ImageBlockState extends State<ImageBlock> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: newUrlController,
-                decoration: InputDecoration(
-                  hintText: 'New image URL (optional)',
-                  isDense: true,
-                ),
-              ),
-              const SizedBox(height: 16),
               Text('Height', style: TextStyle(fontSize: 12)),
               Slider(
                 value: _imageHeight,
@@ -203,32 +191,11 @@ class _ImageBlockState extends State<ImageBlock> {
           TextButton(
             child: const Text('Apply'),
             onPressed: () {
-              if (newUrlController.text.isNotEmpty) {
-                _insertImage(newUrlController.text);
-              } else if (_imageUrl != null) {
-                setState(() => _isLoading = true);
-                try {
-                  // Reload existing image
-                  final response = await http.get(Uri.parse(_imageUrl!));
-                  if (response.statusCode == 200) {
-                    setState(() => _isLoading = false);
-                  }
-                } catch (e) {
-                  _showSnackBar('Failed to reload image');
-                }
-              } else {
-                Navigator.pop(context);
-              }
+              Navigator.pop(context);
             },
           ),
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    newUrlController.dispose();
-    super.dispose();
   }
 }

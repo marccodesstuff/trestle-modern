@@ -1,9 +1,8 @@
 import 'package:appwrite/appwrite.dart';
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
 /// Singleton service for AppWrite operations
 class AppWriteService {
-  // Singleton instance - create once, use everywhere
   static final AppWriteService _instance = AppWriteService._internal();
   
   factory AppWriteService() => _instance;
@@ -24,29 +23,22 @@ class AppWriteService {
   }
 
   /// Create a new document
-  Future<void> saveNewDocument(String title, List<Widget> blocks) async {
+  Future<void> saveNewDocument(String title, List<dynamic> blocks) async {
     try {
-      if (_client == null) {
-        print('AppWrite client not initialized');
+      if (_client == null || _databases == null) {
+        print('AppWrite client or databases not initialized');
         return;
       }
 
-      // Convert blocks to map format for storage
-      List<Map<String, dynamic>> blockData = blocks.map((block) {
-        if (block is TextField) {
-          return {
-            'type': 'text',
-            'content': block.controller.text,
-            'maxLines': 3,
-          };
-        } else if (block is ImageBlock) {
-          return {
-            'type': 'image',
-            'url': _getImageUrlFromBlock(block),
-          };
+      // Convert blocks to map format for storage (simplified - manual construction needed in UI)
+      List<Map<String, dynamic>> blockData = [];
+      for (var block in blocks) {
+        if (block is Map<String, dynamic>) {
+          blockData.add(block);
+        } else {
+          print('Unsupported block type: ${block.runtimeType}');
         }
-        return {} as Map<String, dynamic>;
-      }).toList();
+      }
 
       // Convert to JSON string
       String blockDataJson = jsonEncode(blockData);
@@ -54,7 +46,7 @@ class AppWriteService {
       // Create document
       final documentId = ID.unique();
       
-      await _databases.createDocument(
+      await _databases!.createDocument(
         databaseId: 'trestle_notes',
         collectionId: 'trestle_docs',
         documentId: documentId,
@@ -63,7 +55,7 @@ class AppWriteService {
           'content': blockDataJson,
           'date_created': DateTime.now().toIso8601String(),
           'date_updated': DateTime.now().toIso8601String(),
-          'version': 1, // Semantic versioning for documents
+          'version': 1,
         },
       );
 
@@ -77,17 +69,17 @@ class AppWriteService {
   /// Fetch recent documents (most recently updated)
   Future<List<Map<String, dynamic>>> fetchRecentDocuments() async {
     try {
-      if (_client == null) {
-        print('AppWrite client not initialized');
+      if (_client == null || _databases == null) {
+        print('AppWrite client or databases not initialized');
         return [];
       }
 
-      final response = await _databases.listDocuments(
+      final response = await _databases!.listDocuments(
         databaseId: 'trestle_notes',
         collectionId: 'trestle_docs',
         queries: [
           Query.orderDesc('date_updated'),
-          Query.limit(10), // Return top 10 most recent
+          Query.limit(10),
         ],
       );
 
@@ -101,12 +93,12 @@ class AppWriteService {
   /// Fetch a single document by ID
   Future<Map<String, dynamic>?> fetchDocumentById(String documentId) async {
     try {
-      if (_client == null) {
-        print('AppWrite client not initialized');
+      if (_client == null || _databases == null) {
+        print('AppWrite client or databases not initialized');
         return null;
       }
 
-      final response = await _databases.getDocument(
+      final response = await _databases!.getDocument(
         databaseId: 'trestle_notes',
         collectionId: 'trestle_docs',
         documentId: documentId,
@@ -117,12 +109,5 @@ class AppWriteService {
       print('Error fetching document: $e');
       return null;
     }
-  }
-
-  /// Helper to extract image URL from ImageBlock widget
-  String? _getImageUrlFromBlock(ImageBlock block) {
-    // Since we're working with Widget tree, we'll store null and fetch via HTTP
-    // or implement proper serialization in the future
-    return 'placeholder';
   }
 }

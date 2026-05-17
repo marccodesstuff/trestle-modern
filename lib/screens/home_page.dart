@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/appwrite_service.dart';
 import '../widgets/note_card.dart';
+import 'edit_document_page.dart';
 
 class WelcomeScreen extends StatefulWidget {
   final String userName;
@@ -112,8 +113,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const DocumentEditorPage(
-                documentTitle: 'New Note',
+              builder: (context) => EditDocumentPage(
+                documentId: '',
               ),
             ),
           );
